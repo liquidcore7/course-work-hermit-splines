@@ -1,5 +1,6 @@
 import { RealFunction } from '../math/function';
 import PlotlyChart from "react-plotlyjs-ts";
+import { iota } from './utils';
 
 
 export interface PlotParams {
@@ -12,15 +13,17 @@ export interface PlotParams {
 
 export const Plot = (params: PlotParams) => {
     const h = (params.xEnd - params.xStart) / (params.numberOfPoints - 1);
-    const xPoints = Array(params.numberOfPoints).map((_, i) => params.xStart + i * h);
+    const xPoints = iota(params.numberOfPoints)((i) => params.xStart + i * h);
     const yPoints = xPoints.map(params.f);
     const plotlyParams = [
         {
-            type: 'line',
+            type: 'scatter',
+            mode: 'lines',
             x: xPoints,
             y: yPoints
         }
     ];
+    console.log(xPoints[2]);
 
-    return <PlotlyChart data={plotlyParams}/>;
+    return <PlotlyChart data={plotlyParams} />;
 }

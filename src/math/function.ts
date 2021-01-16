@@ -10,3 +10,6 @@ export class FunctionOps {
     static readonly subtract = (l: RealFunction, r: RealFunction): RealFunction =>
         FunctionOps.combine(l, r)((a, b) => a - b);
 }
+
+
+export const Zero = (x: number) => 0.0;
