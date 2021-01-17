@@ -1,5 +1,5 @@
 import { RealFunction, Zero } from '../math/function';
-import { evalExpressionAsRealFunction, ReactStateHook } from './utils';
+import {composeReactHook, evalExpressionAsRealFunction, ReactStateHook} from './utils';
 import { FunctionInput } from './function-input';
 import { Container, FormControl, FormControlLabel, FormLabel, Radio, RadioGroup } from '@material-ui/core';
 import React, { ChangeEvent } from 'react';
@@ -17,10 +17,10 @@ export interface NamedFWithDerivative {
 }
 
 
-const transformCustomFunction = (fHook: ReactStateHook<string>, dfHook: ReactStateHook<string>) => {
+const transformCustomFunction = (fHook: ReactStateHook<string>, dfHook: ReactStateHook<string>, testX: number) => {
     const callableFromHook = (hook: ReactStateHook<string>) => {
         const [code, _] = hook;
-        return evalExpressionAsRealFunction(code) || Zero;
+        return evalExpressionAsRealFunction(code, testX) || Zero;
     };
 
     return {
@@ -33,6 +33,7 @@ const transformCustomFunction = (fHook: ReactStateHook<string>, dfHook: ReactSta
 export interface FunctionSourceHook {
     readonly functionSourceHook: ReactStateHook<string>;
     readonly dfSourceHook: ReactStateHook<string>;
+    readonly testX: number;
 }
 
 
@@ -68,7 +69,7 @@ export const FunctionsList = (params: FunctionsListParams & FunctionSourceHook) 
 
     const findByName = (name: string) =>
         name === 'custom' ?
-            transformCustomFunction(params.functionSourceHook, params.dfSourceHook) :
+            transformCustomFunction(params.functionSourceHook, params.dfSourceHook, params.testX) :
             DefaultFunctions.find((f: NamedFWithDerivative) => f.f.name === name) as NamedFWithDerivative;
 
     const onChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -77,10 +78,32 @@ export const FunctionsList = (params: FunctionsListParams & FunctionSourceHook) 
         setSelectedF(findByName(name));
     }
 
+    const functionInputAfterUpdateHook = (hookToUpdate: 'f' | 'df') => (newSource: string): void => {
+        if (selectedFName === 'custom') {
+            switch (hookToUpdate) {
+                case 'f':
+                    setSelectedF(transformCustomFunction(
+                        [ newSource, params.functionSourceHook[1] ], params.dfSourceHook, params.testX
+                    ));
+                    break;
+                case 'df':
+                    setSelectedF(transformCustomFunction(
+                        params.functionSourceHook, [ newSource, params.dfSourceHook[1] ], params.testX
+                    ));
+                    break;
+            }
+        }
+    }
+
     const functionInput = selectedFName === 'custom' ?
         <FunctionInput name='Custom function'
-                       fHook={params.functionSourceHook}
-                       dfHook={params.dfSourceHook} /> :
+                       functionSourceHook={
+                           composeReactHook(params.functionSourceHook)(functionInputAfterUpdateHook('f'))
+                       }
+                       dfSourceHook={
+                           composeReactHook(params.dfSourceHook)(functionInputAfterUpdateHook('df'))
+                       }
+                       testX={ params.testX } /> :
         null;
 
     return (

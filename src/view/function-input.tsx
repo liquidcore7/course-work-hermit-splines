@@ -1,26 +1,29 @@
 import React from 'react';
 import { ReactStateHook, validateEvalExpression } from './utils';
 import {FormLabel, Paper, TextField} from '@material-ui/core';
+import {FunctionSourceHook} from "./functions-list";
 
 
-export interface FunctionInputParams {
+export interface FunctionInputParams extends FunctionSourceHook {
     readonly name: string;
-    readonly fHook: ReactStateHook<string>;
-    readonly dfHook: ReactStateHook<string>;
 }
 
 
 export const FunctionInput = (params: FunctionInputParams) => {
     const toTextField = (stateHook: ReactStateHook<string>, label: string, idPrefix: string) => {
         const [source, setSource] = stateHook;
+        const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+            const newData = event.target.value;
+            setSource(newData);
+        };
 
         return (
             <TextField id={`${idPrefix}-source-code-input`}
-                   label={label}
-                   error={ validateEvalExpression(source) }
-                   helperText='Entered expression is not a valid JS/TS code.'
-                   onChange={ (event: React.ChangeEvent<HTMLInputElement>) => setSource(event.target.value) }
-                   value={source} />
+                       label={label}
+                       error={ !validateEvalExpression(source, params.testX) }
+                       helperText='Entered expression should be a valid JS/TS code.'
+                       onChange={onChange}
+                       value={source}/>
         );
     };
 
@@ -28,8 +31,8 @@ export const FunctionInput = (params: FunctionInputParams) => {
         <Paper elevation={2}>
             <form noValidate autoComplete="off">
                 <FormLabel component="legend">Custom function</FormLabel>
-                {toTextField(params.fHook, 'Source code', 'function')}
-                {toTextField(params.dfHook, 'Derivative source code', 'derivative')}
+                {toTextField(params.functionSourceHook, 'Source code', 'function')}
+                {toTextField(params.dfSourceHook, 'Derivative source code', 'derivative')}
             </form>
         </Paper>
     );

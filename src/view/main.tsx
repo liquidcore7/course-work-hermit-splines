@@ -6,6 +6,7 @@ import { PlotParams } from './plot';
 import { HermitCubicSpline, HermitSplineParams, IntervalSplitter } from '../math/hermit';
 import { DefaultFunctions } from './functions-list';
 import {iota} from "./utils";
+import {Zero} from "../math/function";
 
 
 export interface MainParams {
@@ -30,13 +31,21 @@ const uniformSplitter = (numberOfPoints: number) => ({
 
 
 const approximateUsingCubicSpline = (splineParams: HermitSplineParams, numberOfPoints: number) => {
-    const cubicApproximator = new HermitCubicSpline(uniformSplitter(numberOfPoints));
+    if (!numberOfPoints || numberOfPoints <= 1) {
+        return {
+            xStart: splineParams.xStart,
+            xEnd: splineParams.xEnd,
+            f: Zero
+        } as PlotParams;
+    } else {
+        const cubicApproximator = new HermitCubicSpline(uniformSplitter(numberOfPoints));
 
-    return {
-        xStart: splineParams.xStart,
-        xEnd: splineParams.xEnd,
-        f: cubicApproximator.approximate(splineParams)
-    } as PlotParams;
+        return {
+            xStart: splineParams.xStart,
+            xEnd: splineParams.xEnd,
+            f: cubicApproximator.approximate(splineParams)
+        } as PlotParams;
+    }
 }
 
 
@@ -46,6 +55,7 @@ export const Main = (params: MainParams) => {
     const customDFHook = React.useState('');
     const xStartHook = React.useState(1.0);
     const xEndHook = React.useState(4.0);
+    const hermitSplinePointsCount = React.useState(500);
     const selectedFHook = React.useState(DefaultFunctions[0]);
 
     const originalFParams = () => ({
@@ -61,9 +71,11 @@ export const Main = (params: MainParams) => {
         f: approximateUsingCubicSpline({
             ...originalFParams(),
             df: selectedFHook[0].df.callable
-        }, params.numberOfPoints).f,
+        }, hermitSplinePointsCount[0]).f,
         numberOfPoints: params.numberOfPoints
     } as PlotParams);
+
+    const midPoint = (xStartHook[0] + xEndHook[0]) / 2.0;
 
     return (
         <Container>
@@ -72,7 +84,10 @@ export const Main = (params: MainParams) => {
                 functionSourceHook={customFHook}
                 dfSourceHook={customDFHook}
                 xStartHook={xStartHook}
-                xEndHook={xEndHook} />
+                xEndHook={xEndHook}
+                hermitPointsCountHook={hermitSplinePointsCount}
+                numberOfPlotPoints={params.numberOfPoints}
+                testX={midPoint}/>
             <FunctionsView originalFParams={ originalFParams() }
                            approximateFParams={ approximateFParams() } />
         </Container>

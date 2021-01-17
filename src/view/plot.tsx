@@ -23,7 +23,6 @@ export const Plot = (params: PlotParams) => {
             y: yPoints
         }
     ];
-    console.log(xPoints[2]);
 
     return <PlotlyChart data={plotlyParams} />;
 }
